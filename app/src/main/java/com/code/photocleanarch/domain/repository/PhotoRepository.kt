@@ -1,9 +1,9 @@
 package com.code.photocleanarch.domain.repository
 
-import com.code.photocleanarch.data.model.PhotoRemote
-import kotlinx.coroutines.flow.Flow
+import com.code.photocleanarch.domain.model.Photo
+import com.code.photocleanarch.utils.Resource
 
 interface PhotoRepository {
 
-    suspend fun getPhotos(): List<PhotoRemote>
+    suspend fun getPhotos(): Resource<List<Photo>>
 }

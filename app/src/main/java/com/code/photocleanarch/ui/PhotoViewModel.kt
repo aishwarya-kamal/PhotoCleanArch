@@ -4,22 +4,20 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.code.photocleanarch.data.toPhoto
 import com.code.photocleanarch.domain.model.Photo
 import com.code.photocleanarch.domain.repository.PhotoRepository
-import dagger.hilt.android.scopes.ViewModelScoped
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
+import com.code.photocleanarch.utils.Resource
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@ViewModelScoped
+@HiltViewModel
 class PhotoViewModel @Inject constructor(
     private val photoRepository: PhotoRepository
 ) : ViewModel() {
 
-    private var _photos = MutableLiveData<List<Photo>>(emptyList())
-    val photos: LiveData<List<Photo>> = _photos
+    private var _photos = MutableLiveData<Resource<List<Photo>>>()
+    val photos: LiveData<Resource<List<Photo>>> = _photos
 
     init {
         getPhotos()
@@ -27,9 +25,7 @@ class PhotoViewModel @Inject constructor(
 
     private fun getPhotos() {
         viewModelScope.launch {
-             _photos.value = photoRepository.getPhotos().map {
-                 it.toPhoto()
-             }
+             _photos.value = photoRepository.getPhotos()
         }
     }
 }
