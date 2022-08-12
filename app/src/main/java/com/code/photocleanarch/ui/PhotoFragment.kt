@@ -7,11 +7,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.code.photocleanarch.R
 import com.code.photocleanarch.databinding.FragmentPhotoBinding
 import com.code.photocleanarch.utils.Resource
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class PhotoFragment : Fragment() {
@@ -32,28 +36,35 @@ class PhotoFragment : Fragment() {
             recyclerView.adapter = adapter
         }
 
-        setUpObserver()
+        getPhotos()
         return binding.root
     }
 
-    private fun setUpObserver() {
-        viewModel.photos.observe(viewLifecycleOwner) {
-            when(it.status) {
-                Resource.Status.LOADING -> handleVisibility(View.VISIBLE, View.GONE, View.GONE)
-                Resource.Status.SUCCESS -> {
-                    handleVisibility(View.GONE, View.VISIBLE, View.GONE)
-                    adapter.submitList(it.data)
-                }
-                Resource.Status.ERROR -> {
-                    Snackbar.make(view!!, it.message.orEmpty(), Snackbar.LENGTH_LONG).show()
-                    handleVisibility(View.GONE, View.GONE, View.VISIBLE)
+    private fun getPhotos() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.photos.collect { uiState ->
+                    when (uiState.status) {
+                        Resource.Status.LOADING -> handleVisibility(
+                            View.VISIBLE,
+                            View.GONE,
+                            View.GONE,
+                        )
+                        Resource.Status.SUCCESS -> {
+                            handleVisibility(View.GONE, View.VISIBLE, View.GONE)
+                            adapter.submitList(uiState.data)
+                        }
+                        Resource.Status.ERROR -> {
+                            Snackbar.make(binding.recyclerView, uiState.message.orEmpty(), Snackbar.LENGTH_LONG).show()
+                            handleVisibility(View.GONE, View.GONE, View.VISIBLE)
+                        }
+                    }
                 }
             }
-
         }
     }
 
-    fun handleVisibility(progressBar: Int, recyclerview: Int, errorImageView: Int) {
+    private fun handleVisibility(progressBar: Int, recyclerview: Int, errorImageView: Int) {
         binding.progressBar.visibility = progressBar
         binding.recyclerView.visibility = recyclerview
         binding.errorImageView.visibility = errorImageView
